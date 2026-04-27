@@ -3,233 +3,258 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>自転車通学時刻表</title>
+    <title>🚲 通学時刻表アプリ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: sans-serif; margin: 20px; max-width: 400px; margin: auto; }
-        button { padding: 10px 20px; margin: 5px; font-size: 16px; }
-        select, input { padding: 10px; margin: 5px; font-size: 16px; width: 100%; box-sizing: border-box; }
-        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .hidden { display: none; }
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Noto Sans JP', sans-serif; 
+            margin: 0; padding: 10px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; color: #333;
+        }
+        .container { max-width: 480px; margin: auto; }
+        h1 { text-align: center; color: white; margin-bottom: 15px; font-size: 1.5em; }
+        
+        .card { 
+            background: rgba(255,255,255,0.95); 
+            border-radius: 20px; padding: 20px; 
+            margin-bottom: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        #currentTime { font-size: 1em; color: #666; font-weight: bold; }
+        #timer { font-size: 2.5em; color: #4facfe; font-weight: 700; margin: 5px 0; }
+
+        .route-select { 
+            background: #eee; border: none; border-radius: 10px; 
+            padding: 10px; font-size: 16px; width: 100%; margin-bottom: 15px;
+        }
+
+        #actionArea { min-height: 80px; display: flex; align-items: center; justify-content: center; }
+
+        .main-btn { 
+            background: linear-gradient(45deg, #4facfe, #00f2fe); 
+            color: white; border: none; border-radius: 15px; 
+            padding: 18px; font-size: 1.3em; font-weight: 700; 
+            cursor: pointer; width: 100%; transition: 0.3s;
+            box-shadow: 0 5px 15px rgba(79,172,254,0.4);
+        }
+        
+        .arrive-btn { background: linear-gradient(45deg, #feca57, #ff9f43); }
+        .depart-btn { background: linear-gradient(45deg, #4facfe, #00f2fe); }
+        .goal-btn { background: linear-gradient(45deg, #1dd1a1, #10ac84); }
+        .main-btn:active { transform: scale(0.95); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; border-radius: 10px; overflow: hidden; }
+        th { font-size: 0.75em; color: #999; padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+        td { padding: 12px 8px; border-bottom: 1px solid #eee; font-size: 0.9em; position: relative; }
+        
+        .place-name { font-weight: bold; }
+        .time-cell { font-family: 'monospace'; font-weight: bold; color: #555; }
+        .delay-mark { color: #ff6b6b; font-size: 0.8em; font-weight: bold; margin-left: 5px; }
+        .done-row { background-color: #f0f0f0; color: #ccc !important; }
+        .done-row .time-cell { color: #ccc; }
     </style>
 </head>
 <body>
-    <h1>自転車通学時刻表アプリ</h1>
-    
-    <label>ルート選択:</label>
-    <select id="route">
-        <option value="1">ルート1 (A,B,C,D,E - 5箇所)</option>
-        <option value="2">ルート2 (B,C,D,E - 4箇所)</option>
-    </select>
-    
-    <div id="measureSection">
-        <h2>時間測定</h2>
-        <button id="startBtn">出発（区間開始）</button>
-        <button id="arriveBtn" class="hidden">到着（区間終了）</button>
-        <button id="stopBtn" class="hidden">停車終了</button>
-        <button id="saveBtn">測定保存</button>
-        <p id="timer">00:00:00</p>
-        <p>現在区間: <span id="currentSegment">-</span></p>
-        <h3>今回測定:</h3>
-        <table id="currentData">
-            <thead><tr><th>区間</th><th>移動時間</th><th>停車時間</th></tr></thead>
-            <tbody></tbody>
-        </table>
-    </div>
-    
-    <div id="dataSection">
-        <h2>測定データ（平均）</h2>
-        <table id="avgData">
-            <thead><tr><th>区間</th><th>移動(分)</th><th>停車(分)</th></tr></thead>
-            <tbody></tbody>
-        </table>
-        <button id="clearData">データクリア</button>
-    </div>
-    
-    <div id="timetableSection">
-        <h2>時刻表生成</h2>
-        <label>発車時刻: <input type="time" id="departTime" value="07:00"></label>
-        <button id="generateBtn">発車</button>
-        <table id="timetable" class="hidden">
-            <thead><tr><th>場所</th><th>到着</th><th>出発</th></tr></thead>
-            <tbody></tbody>
-        </table>
+    <div class="container">
+        <h1><i class="fas fa-bicycle"></i> 通学時刻表</h1>
+        
+        <div class="card">
+            <div id="currentTime">現在時刻 00:00:00</div>
+            <div id="timer">00:00</div>
+        </div>
+
+        <div class="card">
+            <div id="setupArea">
+                <select id="route" class="route-select">
+                    <option value="down_musashino">下り むさしの</option>
+                    <option value="down_alpha">下り α</option>
+                    <option value="up_musashino">上り むさしの</option>
+                    <option value="up_alpha">上り α</option>
+                </select>
+                <button id="startBtn" class="main-btn"><i class="fas fa-play"></i> 出発！</button>
+            </div>
+            <div id="actionArea" style="display:none;"></div>
+        </div>
+        
+        <div class="card">
+            <table id="timetable">
+                <thead>
+                    <tr><th style="width: 35%;">場所</th><th style="width: 65%;">予定 / 結果</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="2" style="text-align:center; padding:20px; color:#999;">出発ボタンを押して開始</td></tr>
+                </tbody>
+            </table>
+            <button id="resetBtn" style="margin-top:15px; background:none; border:none; color:#999; text-decoration:underline; font-size:0.8em; cursor:pointer;">設定に戻る</button>
+        </div>
     </div>
 
     <script>
-        // データ構造
-        let data = JSON.parse(localStorage.getItem('bikeData')) || {1: [], 2: []};
-        let currentRoute = 1;
-        let currentData = [];
-        let timerInterval;
-        let startTime, stopTime;
-        let currentSegment = 0; // 0-based index
+        const routeSettings = {
+            "down_musashino": [
+                { name: "下保谷", move: 8, stop: 0 },
+                { name: "住吉会館", move: 7, stop: 0 },
+                { name: "田無町3丁目", move: 7, stop: 1 },
+                { name: "五日市", move: 4, stop: 0 },
+                { name: "桜橋", move: 4, stop: 0 },
+                { name: "武蔵境", move: 10, stop: 0 },
+                { name: "新大沢", move: 0, stop: 0 }
+            ],
+            "down_alpha": [
+                { name: "下保谷", move: 15, stop: 0 },
+                { name: "田無町3丁目", move: 7, stop: 1 },
+                { name: "五日市", move: 	4, stop: 0 },
+                { name: "桜橋", move: 4, stop: 0 },
+                { name: "武蔵境", move: 10, stop: 0 },
+                { name: "新大沢", move: 0, stop: 0 }
+            ],
+            "up_musashino": [
+                { name: "新大沢", move: 10, stop: 0 },
+                { name: "武蔵境", move: 2, stop: 0 },
+                { name: "五日市", move: 	7, stop: 0 },
+                { name: "田無町3丁目", move: 7, stop: 1 },
+                { name: "住吉会館", move: 8, stop: 0 },
+                { name: "下保谷", move: 0, stop: 0 }
+            ],
+            "up_alpha": [
+                { name: "新大沢", move: 10, stop: 0 },
+                { name: "武蔵境", move: 2, stop: 0 },
+                { name: "桜橋", move: 3, stop: 0 },
+                { name: "五日市", move: 	7, stop: 0 },
+                { name: "田無町3丁目", move: 6, stop: 1 },
+                { name: "下保谷", move: 15, stop: 0 }
+            ]
+        };
 
-        const stops = {1: ['出発', 'A', 'B', 'C', 'D', 'E'], 2: ['出発', 'B', 'C', 'D', 'E']};
+        let currentStep = 0;
+        let routeData = [];
+        let scheduledTimes = [];
 
-        // ルート変更
-        document.getElementById('route').addEventListener('change', (e) => {
-            currentRoute = parseInt(e.target.value);
-            loadAvgData();
-        });
+        const setupArea = document.getElementById('setupArea');
+        const actionArea = document.getElementById('actionArea');
+        const startBtn = document.getElementById('startBtn');
+        const routeSelect = document.getElementById('route');
+        const tbody = document.querySelector('#timetable tbody');
 
-        // タイマー
-        function updateTimer() {
-            const now = Date.now();
-            const elapsed = Math.floor((now - startTime) / 1000);
-            const h = Math.floor(elapsed / 3600).toString().padStart(2, '0');
-            const m = Math.floor((elapsed % 3600) / 3600).toString().padStart(2, '0');
-            const s = Math.floor((elapsed % 60)).toString().padStart(2, '0');
-            document.getElementById('timer').textContent = `${h}:${m}:${s}`;
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = `現在時刻 ${now.toTimeString().slice(0, 8)}`;
+            document.getElementById('timer').textContent = now.toTimeString().slice(3, 8); 
         }
+        setInterval(updateClock, 1000);
+        updateClock();
 
-        // 出発ボタン
-        document.getElementById('startBtn').addEventListener('click', () => {
-            currentData = [{move: 0, stop: 0}];
-            currentSegment = 0;
-            startTime = Date.now();
-            timerInterval = setInterval(updateTimer, 1000);
-            document.getElementById('startBtn').classList.add('hidden');
-            document.getElementById('arriveBtn').classList.remove('hidden');
-            document.getElementById('currentSegment').textContent = stops[currentRoute][0] + ' → ' + stops[currentRoute][1];
-            updateCurrentTable();
-        });
+        function updateActionButton() {
+            actionArea.innerHTML = '';
+            const step = routeData[currentStep];
+            const btn = document.createElement('button');
+            btn.className = 'main-btn';
 
-        // 到着ボタン
-        document.getElementById('arriveBtn').addEventListener('click', () => {
-            const moveTime = Date.now() - startTime;
-            currentData[currentSegment].move = Math.round(moveTime / 60000); // 分単位
-            stopTime = Date.now();
-            document.getElementById('arriveBtn').classList.add('hidden');
-            document.getElementById('stopBtn').classList.remove('hidden');
-            document.getElementById('currentSegment').textContent = stops[currentRoute][currentSegment + 1];
-        });
-
-        // 停車終了ボタン
-        document.getElementById('stopBtn').addEventListener('click', () => {
-            const stopTimeElapsed = Date.now() - stopTime;
-            currentData[currentSegment].stop = Math.round(stopTimeElapsed / 60000);
-            currentSegment++;
-            if (currentSegment >= stops[currentRoute].length - 1) {
-                clearInterval(timerInterval);
-                document.getElementById('stopBtn').classList.add('hidden');
-                document.getElementById('saveBtn').classList.remove('hidden');
-                return;
+            if (step.type === 'start') {
+                btn.innerHTML = `<i class="fas fa-bicycle"></i> ${step.name}を出発`;
+                btn.classList.add('depart-btn');
+            } else if (step.type === 'goal') {
+                btn.innerHTML = `<i class="fas fa-flag-checkered"></i> ${step.name}に到着！`;
+                btn.classList.add('goal-btn');
+            } else if (step.type === 'arrive') {
+                btn.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${step.name}に到着`;
+                btn.classList.add('arrive-btn');
+            } else if (step.type === 'depart') {
+                btn.innerHTML = `<i class="fas fa-play"></i> ${step.name}を出発`;
+                btn.classList.add('depart-btn');
             }
-            document.getElementById('stopBtn').classList.add('hidden');
-            document.getElementById('arriveBtn').classList.remove('hidden');
-            startTime = Date.now();
-            document.getElementById('currentSegment').textContent = stops[currentRoute][currentSegment + 1] + ' → ' + stops[currentRoute][currentSegment + 2];
-            updateCurrentTable();
-        });
 
-        function updateCurrentTable() {
-            const tbody = document.querySelector('#currentData tbody');
-            tbody.innerHTML = '';
-            currentData.slice(0, currentSegment + 1).forEach((seg, i) => {
-                const row = tbody.insertRow();
-                row.insertCell(0).textContent = stops[currentRoute][i] + '-' + stops[currentRoute][i+1];
-                row.insertCell(1).textContent = seg.move || '-';
-                row.insertCell(2).textContent = seg.stop || '-';
-            });
+            btn.onclick = nextStep;
+            actionArea.appendChild(btn);
         }
 
-        // 保存
-        document.getElementById('saveBtn').addEventListener('click', () => {
-            data[currentRoute].push([...currentData]);
-            localStorage.setItem('bikeData', JSON.stringify(data));
-            loadAvgData();
-            alert('保存しました！');
-            resetMeasure();
-        });
-
-        function resetMeasure() {
-            clearInterval(timerInterval);
-            document.getElementById('startBtn').classList.remove('hidden');
-            document.getElementById('arriveBtn').classList.add('hidden');
-            document.getElementById('stopBtn').classList.add('hidden');
-            document.getElementById('saveBtn').classList.add('hidden');
-            document.getElementById('timer').textContent = '00:00:00';
-            document.querySelector('#currentData tbody').innerHTML = '';
-        }
-
-        // 平均データ表示
-        function loadAvgData() {
-            const avg = {};
-            const measurements = data[currentRoute];
-            if (measurements.length === 0) return;
-            const numStops = stops[currentRoute].length - 1;
-            for (let i = 0; i < numStops; i++) {
-                let totalMove = 0, totalStop = 0;
-                measurements.forEach(m => {
-                    totalMove += m[i]?.move || 0;
-                    totalStop += m[i]?.stop || 0;
-                });
-                avg[i] = {
-                    move: Math.round(totalMove / measurements.length * 10) / 10,
-                    stop: Math.round(totalStop / measurements.length * 10) / 10
-                };
-            }
-            const tbody = document.querySelector('#avgData tbody');
-            tbody.innerHTML = '';
-            Object.keys(avg).forEach(i => {
-                const row = tbody.insertRow();
-                row.insertCell(0).textContent = stops[currentRoute][parseInt(i)] + '-' + stops[currentRoute][parseInt(i)+1];
-                row.insertCell(1).textContent = avg[i].move;
-                row.insertCell(2).textContent = avg[i].stop;
-            });
-        }
-        loadAvgData();
-
-        // データクリア
-        document.getElementById('clearData').addEventListener('click', () => {
-            if (confirm('データをクリアしますか？')) {
-                data[currentRoute] = [];
-                localStorage.setItem('bikeData', JSON.stringify(data));
-                loadAvgData();
-            }
-        });
-
-        // 時刻表生成
-        document.getElementById('generateBtn').addEventListener('click', () => {
-            const departStr = document.getElementById('departTime').value;
-            let [h, m] = departStr.split(':').map(Number);
-            let currentMin = h * 60 + m;
-            const tbody = document.querySelector('#timetable tbody');
-            tbody.innerHTML = '';
-            const avg = getAvgTimes();
-            stops[currentRoute].forEach((stop, i) => {
-                if (i === 0) {
-                    const row = tbody.insertRow();
-                    row.insertCell(0).textContent = stop;
-                    row.insertCell(1).textContent = '-';
-                    row.insertCell(2).textContent = `${Math.floor(currentMin/60).toString().padStart(2,'0')}:${(currentMin%60).toString().padStart(2,'0')}`;
-                    return;
+        function nextStep() {
+            const now = new Date();
+            const step = routeData[currentStep];
+            const rows = tbody.querySelectorAll('tr');
+            const targetRow = rows[step.placeIndex];
+            
+            // 遅延チェック (到着時のみ)
+            if (step.type === 'arrive' || step.type === 'goal') {
+                const scheduled = scheduledTimes[step.placeIndex].arrival;
+                const diff = Math.floor((now - scheduled) / 60000);
+                if (diff >= 1) {
+                    const delaySpan = document.createElement('span');
+                    delaySpan.className = 'delay-mark';
+                    delaySpan.innerHTML = `⚠️+${diff}分`;
+                    targetRow.cells[1].appendChild(delaySpan);
                 }
-                const prevIdx = i - 1;
-                currentMin += avg[prevIdx]?.move || 0;
-                const arriveStr = `${Math.floor(currentMin/60).toString().padStart(2,'0')}:${(currentMin%60).toString().padStart(2,'0')}`;
-                currentMin += avg[prevIdx]?.stop || 0;
-                const departStr = `${Math.floor(currentMin/60).toString().padStart(2,'0')}:${(currentMin%60).toString().padStart(2,'0')}`;
-                const row = tbody.insertRow();
-                row.insertCell(0).textContent = stop;
-                row.insertCell(1).textContent = arriveStr;
-                row.insertCell(2).textContent = i === stops[currentRoute].length - 1 ? '-' : departStr;
-            });
-            document.getElementById('timetable').classList.remove('hidden');
-        });
+            }
 
-        function getAvgTimes() {
-            // avgDataから平均取得（簡易）
-            const avg = {};
-            document.querySelectorAll('#avgData tbody tr').forEach((row, i) => {
-                avg[i] = {
-                    move: parseFloat(row.cells[1].textContent) || 0,
-                    stop: parseFloat(row.cells[2].textContent) || 0
-                };
-            });
-            return avg;
+            // 出発したら行を薄くする
+            if (step.type.includes('depart') || step.type === 'start') {
+                targetRow.classList.add('done-row');
+            }
+
+            currentStep++;
+            if (currentStep < routeData.length) {
+                updateActionButton();
+            } else {
+                actionArea.innerHTML = '<p style="font-weight:bold; color:#10ac84;">学校に到着しました！</p>';
+            }
         }
+
+        startBtn.onclick = function() {
+            const selectedRoute = routeSelect.value;
+            const segments = routeSettings[selectedRoute];
+            let currentTime = new Date();
+            
+            tbody.innerHTML = '';
+            routeData = [];
+            scheduledTimes = [];
+            currentStep = 0;
+
+            segments.forEach((seg, index) => {
+                const tr = document.createElement('tr');
+                const arrival = index === 0 ? null : new Date(currentTime);
+                
+                if (index !== 0 && index !== segments.length - 1) {
+                    currentTime.setMinutes(currentTime.getMinutes() + seg.stop);
+                }
+                const departure = index === segments.length - 1 ? null : new Date(currentTime);
+
+                scheduledTimes.push({ arrival, departure });
+
+                const arrivalStr = arrival ? arrival.toTimeString().slice(0, 5) : "";
+                const departureStr = departure ? departure.toTimeString().slice(0, 5) : "";
+                const planText = index === 0 ? `${departureStr} 発` : 
+                                 index === segments.length - 1 ? `${arrivalStr} 着` : 
+                                 `${arrivalStr}着 / ${departureStr}発`;
+
+                tr.innerHTML = `<td class="place-name">${seg.name}</td><td class="time-cell">${planText}</td>`;
+                tbody.appendChild(tr);
+
+                if (index === 0) {
+                    routeData.push({ type: 'start', name: seg.name, placeIndex: index });
+                } else if (index === segments.length - 1) {
+                    routeData.push({ type: 'goal', name: seg.name, placeIndex: index });
+                } else {
+                    routeData.push({ type: 'arrive', name: seg.name, placeIndex: index });
+                    routeData.push({ type: 'depart', name: seg.name, placeIndex: index });
+                }
+
+                currentTime.setMinutes(currentTime.getMinutes() + seg.move);
+            });
+
+            setupArea.style.display = 'none';
+            actionArea.style.display = 'flex';
+            updateActionButton();
+        };
+
+        document.getElementById('resetBtn').onclick = function() {
+            setupArea.style.display = 'block';
+            actionArea.style.display = 'none';
+            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; padding:20px; color:#999;">出発ボタンを押して開始</td></tr>';
+        };
     </script>
 </body>
 </html>
